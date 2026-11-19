@@ -1,0 +1,7 @@
+// Shared build settings. Signing defaults to "Sign to Run Locally" (ad hoc),
+// so a fresh clone builds without an Apple developer account.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = -
+
+// Per-developer overrides (e.g. DEVELOPMENT_TEAM). Git ignores this file.
+#include? "Local.xcconfig"

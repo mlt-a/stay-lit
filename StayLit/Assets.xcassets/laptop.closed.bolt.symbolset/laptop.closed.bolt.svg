@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Generator: Apple Native CoreSVG 341-->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="3300" height="2200">
+<!--glyph: "laptop.closed.bolt", point size: 100.0, font version: "Version 6.0d6e1", template writer version: "133.0.0"-->
+<g id="Notes">
+ <rect height="2200" id="artboard" style="fill:white;opacity:1" width="3300" x="0" y="0"/>
+ <line style="fill:none;stroke:#000000;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="292" y2="292"/>
+ <text style="stroke:none;fill:black;font-family:sans-serif;font-size:13;font-weight:bold;" transform="matrix(1 0 0 1 263 322)">Regular</text>
+</g>
+<g id="Guides">
+ <line id="Baseline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="696" y2="696"/>
+ <line id="Capline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="625.541" y2="625.541"/>
+ <line id="Baseline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1126" y2="1126"/>
+ <line id="Capline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1055.541" y2="1055.541"/>
+ <line id="Baseline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1556" y2="1556"/>
+ <line id="Capline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="263" x2="3036" y1="1485.541" y2="1485.541"/>
+ <line id="left-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1;" x1="1400.00" x2="1400.00" y1="1030.785" y2="1150.121"/>
+ <line id="right-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1;" x1="1520.67" x2="1520.67" y1="1030.785" y2="1150.121"/>
+ <line id="left-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1;" x1="1400.00" x2="1400.00" y1="600.785" y2="720.121"/>
+ <line id="right-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1;" x1="1520.67" x2="1520.67" y1="600.785" y2="720.121"/>
+</g>
+<g id="Symbols">
+ <g id="Regular-S" transform="matrix(1 0 0 1 1400.00 696)">
+  <path d="M 16.00 14.44 L 104.67 14.44 C 108.54 14.44 111.67 11.31 111.67 7.44 L 111.67 7.44 C 111.67 3.57 108.54 0.44 104.67 0.44 L 16.00 0.44 C 12.13 0.44 9.00 3.57 9.00 7.44 L 9.00 7.44 C 9.00 11.31 12.13 14.44 16.00 14.44 Z"/>
+  <path d="M 106.43 1.01 L 22.43 -28.32 C 20.17 -29.11 17.70 -27.92 16.91 -25.66 C 16.12 -23.40 17.31 -20.93 19.57 -20.14 L 103.58 9.20 C 105.84 9.99 108.31 8.79 109.10 6.53 C 109.89 4.28 108.69 1.80 106.43 1.01 Z"/>
+  <path d="M 63.32 -84.37 C 63.51 -85.14 63.13 -85.93 62.42 -86.27 C 61.71 -86.61 60.86 -86.40 60.38 -85.78 L 36.58 -54.61 C 36.19 -54.10 36.13 -53.43 36.41 -52.86 C 36.69 -52.29 37.27 -51.93 37.90 -51.93 L 50.51 -51.93 L 45.35 -30.76 C 45.16 -29.99 45.54 -29.20 46.25 -28.86 C 46.96 -28.52 47.81 -28.72 48.29 -29.35 L 72.09 -60.52 C 72.48 -61.02 72.54 -61.70 72.26 -62.27 C 71.98 -62.84 71.40 -63.20 70.77 -63.20 L 58.16 -63.20 Z"/>
+ </g>
+ <g id="Regular-M" transform="matrix(1 0 0 1 1400.00 1126)">
+  <path d="M 16.00 14.44 L 104.67 14.44 C 108.54 14.44 111.67 11.31 111.67 7.44 L 111.67 7.44 C 111.67 3.57 108.54 0.44 104.67 0.44 L 16.00 0.44 C 12.13 0.44 9.00 3.57 9.00 7.44 L 9.00 7.44 C 9.00 11.31 12.13 14.44 16.00 14.44 Z"/>
+  <path d="M 106.43 1.01 L 22.43 -28.32 C 20.17 -29.11 17.70 -27.92 16.91 -25.66 C 16.12 -23.40 17.31 -20.93 19.57 -20.14 L 103.58 9.20 C 105.84 9.99 108.31 8.79 109.10 6.53 C 109.89 4.28 108.69 1.80 106.43 1.01 Z"/>
+  <path d="M 63.32 -84.37 C 63.51 -85.14 63.13 -85.93 62.42 -86.27 C 61.71 -86.61 60.86 -86.40 60.38 -85.78 L 36.58 -54.61 C 36.19 -54.10 36.13 -53.43 36.41 -52.86 C 36.69 -52.29 37.27 -51.93 37.90 -51.93 L 50.51 -51.93 L 45.35 -30.76 C 45.16 -29.99 45.54 -29.20 46.25 -28.86 C 46.96 -28.52 47.81 -28.72 48.29 -29.35 L 72.09 -60.52 C 72.48 -61.02 72.54 -61.70 72.26 -62.27 C 71.98 -62.84 71.40 -63.20 70.77 -63.20 L 58.16 -63.20 Z"/>
+ </g>
+</g>
+</svg>
