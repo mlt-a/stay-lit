@@ -216,17 +216,4 @@ struct LidClosedReportModelTests {
         #expect(rig.model.isSleepDisabled)
         #expect(rig.model.lastLidClosedReport == LidClosedReport(duration: .seconds(120), end: .lidOpened))
     }
-
-    // MARK: Dismissing
-
-    @Test func dismissingTheReportClearsIt() async {
-        let rig = Rig()
-        await rig.startAndRun()
-        await rig.openTheLid()
-        #expect(rig.model.lastLidClosedReport != nil)
-
-        rig.model.dismissLidClosedReport()
-
-        #expect(rig.model.lastLidClosedReport == nil)
-    }
 }

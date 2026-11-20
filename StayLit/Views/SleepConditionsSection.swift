@@ -8,8 +8,7 @@ struct SleepConditionsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Let me sleep when")
-                .font(.subheadline.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
+                .sectionHeaderStyle()
             GuardRow(
                 condition: .claudeFinished,
                 identifier: "claudeGuard",
@@ -18,7 +17,7 @@ struct SleepConditionsSection: View {
                 isDisabled: model.isBusy,
                 set: model.setClaudeGuardEnabled
             )
-            SettingRow(symbol: RestoreReason.Kind.timer.symbol, isAlerted: reported == .timer, title: Text(RestoreReason.Kind.timer.settingTitle)) {
+            SettingRow(symbol: RestoreReason.Kind.timer.symbol, title: Text(RestoreReason.Kind.timer.settingTitle)) {
                 DurationPicker(model: model)
             }
             if model.hasBattery {
@@ -46,9 +45,9 @@ struct SleepConditionsSection: View {
         }
     }
 
-    /// The condition that ended the last block, while a notice above still says so.
+    /// The guard that cut the last block short, until a new block starts.
     private var reported: RestoreReason.Kind? {
-        model.blockEndNotice?.restoreReason?.kind
+        model.isSleepDisabled ? nil : model.blockEndNotice?.interruptingGuard
     }
 }
 

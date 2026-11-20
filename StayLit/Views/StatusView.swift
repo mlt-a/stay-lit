@@ -1,8 +1,8 @@
 import StayLitCore
 import SwiftUI
 
-/// The window under the menu bar icon: the lid first, then when the Mac sleeps again, then
-/// the general settings.
+/// The window under the menu bar icon: the lid first, then when the Mac sleeps again, how the
+/// last block ended, then the general settings.
 struct StatusView: View {
     let model: AppModel
     /// Asks the system for the right to notify, once. Previews and the demo leave it empty.
@@ -14,6 +14,10 @@ struct StatusView: View {
             Divider()
             SleepConditionsSection(model: model)
             Divider()
+            if let notice = model.blockEndNotice {
+                LastRunSection(notice: notice)
+                Divider()
+            }
             GeneralSection(model: model)
         }
         .padding(16)

@@ -2,7 +2,7 @@ import StayLitCore
 import SwiftUI
 
 /// The top of the window: whether the lid can close, the switch that decides it, what the
-/// agents are doing, and what happened meanwhile.
+/// agents are doing, and the last error.
 struct LidSection: View {
     let model: AppModel
 
@@ -31,17 +31,14 @@ struct LidSection: View {
                             set: model.setSleepDisabled
                         )
                     }
-                    GuardBlockLine(
-                        sleepControl: model.sleepControl,
-                        restoredBy: model.blockEndNotice?.restoreReason?.kind
-                    )
+                    GuardBlockLine(sleepControl: model.sleepControl)
                     AgentsLine(summary: model.claudeSessions.summary(isSleepBlocked: model.isSleepDisabled))
                     if model.isSleepDisabled {
                         SleepDetail(restoreDeadline: model.restoreDeadline)
                     }
                 }
             }
-            Notices(model: model)
+            ErrorNotice(model: model)
         }
     }
 
@@ -73,12 +70,9 @@ private struct StateSentence: View {
 /// further down, out of sight of the switch.
 private struct GuardBlockLine: View {
     let sleepControl: SleepControlState
-    /// The guard a notice below already names, having just ended a block: the line would
-    /// repeat it.
-    let restoredBy: RestoreReason.Kind?
 
     var body: some View {
-        if let block, block.kind != restoredBy {
+        if let block {
             Notice(symbol: block.kind.symbol, tint: Color(.textAmber)) {
                 Text(block.text)
                     .accessibilityIdentifier("sleepBlockedLabel")

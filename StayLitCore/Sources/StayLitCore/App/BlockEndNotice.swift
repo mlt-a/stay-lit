@@ -18,13 +18,21 @@ public enum BlockEndNotice: Sendable, Equatable {
         }
     }
 
+    /// How the block ended. A restore without a report ends like a report of that restore.
+    public var end: LidClosedReport.End {
+        switch self {
+        case .lidClosedReport(let report): report.end
+        case .automaticRestore(let reason): .restored(reason)
+        }
+    }
+
     /// The app's reason for allowing sleep again, when the notice gives one.
     public var restoreReason: RestoreReason? {
-        switch self {
-        case .lidClosedReport(let report):
-            if case .restored(let reason) = report.end { reason } else { nil }
-        case .automaticRestore(let reason):
-            reason
-        }
+        if case .restored(let reason) = end { reason } else { nil }
+    }
+
+    /// The guard that cut the block short. `nil` when the block ended as planned.
+    public var interruptingGuard: RestoreReason.Kind? {
+        end.endedAsPlanned ? nil : restoreReason?.kind
     }
 }

@@ -13,6 +13,12 @@ extension View {
         font(.subheadline)
             .fixedSize(horizontal: false, vertical: true)
     }
+
+    /// The title of a section of the window.
+    func sectionHeaderStyle() -> some View {
+        font(.subheadline.weight(.semibold))
+            .accessibilityAddTraits(.isHeader)
+    }
 }
 
 extension ShapeStyle where Self == AnyShapeStyle {

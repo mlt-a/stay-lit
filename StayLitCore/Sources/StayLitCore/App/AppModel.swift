@@ -44,10 +44,10 @@ public final class AppModel {
     /// why sleep is allowed.
     public private(set) var lastAutomaticRestore: RestoreReason?
     /// The last run with the lid closed and sleep blocked that lasted long enough, and why it
-    /// ended. A new report replaces it, and so does an automatic restore that leaves none. Only
-    /// that and `dismissLidClosedReport()` clear it. Memory only.
-    /// Fed by every successful reading of the sleep state, which also reads the lid. It carries the
-    /// reason of an automatic restore, so the window shows it instead of `lastAutomaticRestore`.
+    /// ended. Fed by every successful reading of the sleep state, which also reads the lid. A new
+    /// report replaces it, and so does an automatic restore that leaves none. Nothing else clears
+    /// it. Memory only. It carries the reason of an automatic restore, so the window shows it
+    /// instead of `lastAutomaticRestore`.
     public private(set) var lastLidClosedReport: LidClosedReport?
     /// The failure of the last action. Cleared by the next action and by `dismissError()`.
     public private(set) var actionError: AppModelError?
@@ -376,10 +376,6 @@ public final class AppModel {
             claudeTracker.reset()
             onClaudeGuardChange(enabled)
         }
-    }
-
-    public func dismissLidClosedReport() {
-        update(\.lastLidClosedReport, to: nil)
     }
 
     public func dismissError() {

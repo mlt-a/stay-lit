@@ -39,4 +39,34 @@ struct BlockEndNoticeTests {
         #expect(notice == .lidClosedReport(report))
         #expect(notice?.restoreReason == nil)
     }
+
+    @Test(arguments: [
+        (LidClosedReport.End.restored(.timer), true),
+        (.restored(.claudeFinished), true),
+        (.lidOpened, true),
+        (.restored(.lowBattery(percent: 18)), false),
+        (.restored(.highTemperature), false),
+        (.sleepAllowedElsewhere, false),
+        (.macSlept, false),
+    ])
+    func onlyAPlannedEndCountsAsPlanned(end: LidClosedReport.End, planned: Bool) {
+        #expect(end.endedAsPlanned == planned)
+    }
+
+    @Test func aGuardThatCutTheBlockShortIsNamed() {
+        let restore = BlockEndNotice.automaticRestore(.highTemperature)
+        let report = BlockEndNotice.lidClosedReport(Self.report(.restored(.lowBattery(percent: 18))))
+
+        #expect(restore.interruptingGuard == .highTemperature)
+        #expect(report.interruptingGuard == .lowBattery)
+    }
+
+    @Test(arguments: [LidClosedReport.End.restored(.timer), .restored(.claudeFinished), .lidOpened, .macSlept])
+    func noGuardIsNamedWhenNoneCutTheBlockShort(end: LidClosedReport.End) {
+        #expect(BlockEndNotice.lidClosedReport(Self.report(end)).interruptingGuard == nil)
+    }
+
+    @Test func aRestoreWithoutReportEndsAsThatRestore() {
+        #expect(BlockEndNotice.automaticRestore(.claudeFinished).end == .restored(.claudeFinished))
+    }
 }
