@@ -6,9 +6,10 @@ nonisolated struct MainAppLaunchAtLogin: LaunchAtLoginControlling {
     var status: LaunchAtLoginStatus {
         switch SMAppService.mainApp.status {
         case .enabled: .enabled
-        case .notRegistered: .disabled
+        // A main app never registered reads as `.notFound`, not `.notRegistered`.
+        // Disabling the switch then would block the first registration; `register()` reports real failures.
+        case .notRegistered, .notFound: .disabled
         case .requiresApproval: .requiresApproval
-        case .notFound: .unavailable
         @unknown default: .unavailable
         }
     }
