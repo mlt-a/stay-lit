@@ -20,7 +20,7 @@ nonisolated struct UserNotificationSleepRestoreNotifier: SleepRestoreNotifying {
             return
         case .lowBattery(let percent):
             identifier = "low-battery"
-            body = "The battery is at \(percent)%, so Stay Lit allowed sleep again."
+            body = "The battery is at \(percent)%, so Stay Lit allowed sleep again. Plug in the charger and it turns back on when you use the Mac."
         case .highTemperature:
             identifier = "high-temperature"
             body = "The Mac is too hot, so Stay Lit allowed sleep again."

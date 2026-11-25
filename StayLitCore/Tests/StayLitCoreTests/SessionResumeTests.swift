@@ -54,6 +54,12 @@ private struct Rig {
         #expect(system.withState(\.writes) == 2)
     }
 
+    /// The Mac goes to sleep: let the event go through before the test acts.
+    func sleep() async {
+        session.send(.sleeping)
+        await letQueuedWorkRun()
+    }
+
     /// The user is back, and nothing should come of it: let the event go through before checking.
     func resumeQuietly() async {
         session.send(.resumed)
@@ -118,7 +124,8 @@ struct SessionResumeTests {
     private func theUserBackAfterAnAutomaticRestoreBlocksSleepAgain(reason: Reason) async {
         let rig = Rig()
         await rig.restore(reason)
-        // The guard clears while the user is away: that alone does not block again.
+        // The Mac sleeps, and the guard clears while the user is away: that alone does not block again.
+        await rig.sleep()
         switch reason {
         case .lowBattery: rig.power.send(.onACPower(19))
         case .highTemperature: rig.thermal.send(.nominal)
@@ -200,6 +207,41 @@ struct SessionResumeTests {
         rig.expectBlockedAgain()
     }
 
+    @Test func theChargerBlocksAgainWhenTheMacNeverSlept() async {
+        let rig = Rig()
+        await rig.restore(.lowBattery)
+
+        // The user is still at the desk and plugs in the charger.
+        rig.power.send(.onACPower(19))
+        await rig.waitForTheBlock()
+
+        rig.expectBlockedAgain()
+    }
+
+    @Test(arguments: [PowerState.onBattery(21), nil])
+    private func aReadingOffTheGuardOnBatteryIsNotTheCharger(reading: PowerState?) async {
+        let rig = Rig()
+        await rig.restore(.lowBattery)
+
+        // Back above the threshold, or no reading at all: still unplugged as far as we know.
+        rig.power.send(reading)
+        await letQueuedWorkRun()
+        await rig.model.refresh()
+
+        rig.expectStillAllowed()
+    }
+
+    @Test func aMacThatCoolsWithoutASleepStaysAllowed() async {
+        let rig = Rig()
+        await rig.restore(.highTemperature)
+
+        rig.thermal.send(.nominal)
+        await letQueuedWorkRun()
+        await rig.model.refresh()
+
+        rig.expectStillAllowed()
+    }
+
     @Test func aHotMacWaitsToCoolDown() async {
         let rig = Rig()
         await rig.restore(.highTemperature)
@@ -232,8 +274,7 @@ struct SessionResumeTests {
         await rig.resumeQuietly()
 
         // The lid closes, then the charger comes in the dark.
-        rig.session.send(.sleeping)
-        await letQueuedWorkRun()
+        await rig.sleep()
         rig.power.send(.onACPower(19))
         await letQueuedWorkRun()
         await rig.model.refreshPeriodically()
