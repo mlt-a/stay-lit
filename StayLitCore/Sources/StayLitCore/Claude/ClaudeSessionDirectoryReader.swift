@@ -34,7 +34,7 @@ public struct ClaudeSessionDirectoryReader: ClaudeSessionReading {
             guard let data = try? Data(contentsOf: file),
                   let entry = try? decoder.decode(Entry.self, from: data)
             else { return .working }
-            return ClaudeActivity(status: entry.status)
+            return ClaudeActivity(status: entry.status, bridgeSessionId: entry.bridgeSessionId)
         }
         return ClaudeSessionCounts(activities)
     }
@@ -49,5 +49,17 @@ public struct ClaudeSessionDirectoryReader: ClaudeSessionReading {
 
     private struct Entry: Decodable {
         var status: String?
+        var bridgeSessionId: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case status, bridgeSessionId
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            status = try container.decodeIfPresent(String.self, forKey: .status)
+            // Lenient: an unexpected type here must not hide a readable `status`.
+            bridgeSessionId = try? container.decodeIfPresent(String.self, forKey: .bridgeSessionId)
+        }
     }
 }
