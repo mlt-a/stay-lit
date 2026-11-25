@@ -568,7 +568,7 @@ public final class AppModel {
                 failedRestoreKinds.insert(reason.kind)
                 throw error
             }
-            resumeIntent = .afterSleep
+            if case .lowBattery = reason { resumeIntent = .onCharger } else { resumeIntent = .afterSleep }
             update(\.lastAutomaticRestore, to: reason)
             // Replaced even by nothing: an older report would hide this restore's notice.
             update(\.lastLidClosedReport, to: lidRunTracker.restored(reason, at: timeSource.now))
@@ -710,7 +710,7 @@ public final class AppModel {
         update(\.isTooHot, to: TemperatureGuard.isTooHot(state))
     }
 
-    // MARK: Blocking again after a sleep
+    // MARK: Blocking again after a restore
 
     private enum ResumeIntent {
         case none
@@ -718,6 +718,10 @@ public final class AppModel {
         case afterSleep
         /// The user is back: waiting for the guards to clear. A new sleep goes back to `afterSleep`.
         case due
+        /// A low battery allowed sleep while the user may still be at the desk: waiting for the
+        /// charger, without a sleep. A new sleep goes back to `afterSleep`. Not after the
+        /// temperature: the thermal state flaps, and each cool-down would block again in a loop.
+        case onCharger
     }
 
     /// In the queue, behind a restore in flight: the Mac may sleep and wake before that restore
@@ -728,7 +732,7 @@ public final class AppModel {
             switch (event, resumeIntent) {
             case (.resumed, .afterSleep): resumeIntent = .due
             // Nobody is there until the next resume: no guard clearing in the dark blocks sleep.
-            case (.sleeping, .due): resumeIntent = .afterSleep
+            case (.sleeping, .due), (.sleeping, .onCharger): resumeIntent = .afterSleep
             default: break
             }
         }
@@ -740,16 +744,26 @@ public final class AppModel {
     /// and the busy state follows only once it runs. Tried once: a failure shows its error and the
     /// intent is gone, as after a success.
     private func blockSleepAgainIfDue() async {
-        // Skips the queue when nothing waits. The precondition checks again once it has its turn.
-        guard resumeIntent == .due else { return }
-        await perform(.automatic, if: { [self] in
-            resumeIntent == .due && !isSleepDisabled && blockingGuard == nil && authorization != .notAuthorized
-        }) { [self] in
+        // Skips the queue while nothing can block: every battery event would queue for nothing
+        // until the charger comes. The precondition checks again once it has its turn.
+        guard canBlockAgain else { return }
+        await perform(.automatic, if: { [self] in canBlockAgain }) { [self] in
             resumeIntent = .none
             try await blockSleep()
         }
         // The battery may have dropped, or the Mac heated up, while the write ran.
         await restoreSleepIfAGuardApplies()
+    }
+
+    /// The intent is due, sleep is allowed and no guard would undo a block at once.
+    private var canBlockAgain: Bool {
+        let isDue = switch resumeIntent {
+        case .none, .afterSleep: false
+        case .due: true
+        // Only the charger: a reading back above the threshold on battery, or none, is not it.
+        case .onCharger: power?.isOnBattery == false
+        }
+        return isDue && !isSleepDisabled && blockingGuard == nil && authorization != .notAuthorized
     }
 
     // MARK: Queue

@@ -224,9 +224,11 @@ struct BatteryGuardModelTests {
 
         rig.power.send(.onACPower(10))
         await settle { rig.model.lastAutomaticRestore == nil }
+        await letQueuedWorkRun()
 
         #expect(rig.model.lastAutomaticRestore == nil)
-        #expect(!rig.model.isSleepDisabled)
+        // The Mac never slept: the charger blocks sleep again.
+        #expect(rig.model.isSleepDisabled)
     }
 
     @Test func theNextActionOfTheUserClearsTheMessage() async {

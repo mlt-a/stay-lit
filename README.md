@@ -13,7 +13,7 @@ Under the hood it toggles `pmset -a disablesleep`. That needs root, so Stay Lit 
 - **Lock on close.** Closing the lid while sleep is blocked locks the session. The Mac keeps running behind the lock screen.
 - **Sleep when Claude is done** (off by default). Once every session is idle and the lid is closed, the Mac goes to sleep: after 1 minute, or 10 minutes if a session waits for your answer.
 - **Timer.** Until turned off, 1 h, 2 h or 4 h.
-- **Back on after sleep.** When Stay Lit allowed sleep by itself (Claude done, timer, battery, heat) and the Mac slept, it turns back on when you unlock the Mac. Low battery or heat: it waits until you plug in or the Mac cools down. Turning the switch off cancels it.
+- **Back on after sleep.** When Stay Lit allowed sleep by itself (Claude done, timer, battery, heat) and the Mac slept, it turns back on when you unlock the Mac. Low battery or heat: it waits until you plug in or the Mac cools down. Turning the switch off cancels it. After a low battery, plugging in turns it back on even if the Mac never slept.
 - **Guards.** Sleep comes back when the battery drops to 20% or when the Mac gets too hot. Both are on by default.
 - **Report.** After a lid-closed run, the window shows how long it lasted and why it stopped.
 - **Launch at login.**
