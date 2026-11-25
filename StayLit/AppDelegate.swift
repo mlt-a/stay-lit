@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             launchAtLogin: MainAppLaunchAtLogin(),
             powerMonitor: IOKitPowerMonitor(),
             thermalMonitor: ProcessInfoThermalMonitor(),
+            sessionMonitor: SilentSessionMonitor(),
             claudeSessions: ClaudeSessionDirectoryReader(),
             lid: IOKitLidReader(),
             systemSleeper: PmsetSystemSleeper(),
@@ -102,6 +103,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return .terminateLater
     }
+}
+
+/// Never tells anything: the app never blocks sleep again by itself.
+private struct SilentSessionMonitor: SessionMonitoring {
+    func events() -> AsyncStream<SessionEvent> { AsyncStream { _ in } }
 }
 
 #if DEBUG

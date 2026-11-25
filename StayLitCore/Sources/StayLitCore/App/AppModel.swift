@@ -14,7 +14,8 @@ import Observation
 /// allows sleep again by itself, when the chosen duration ends, the battery runs low, the Mac
 /// gets too hot or Claude Code has finished with the lid closed (`RestoreReason`): that goes
 /// through the same queue, as one more action. The last one also puts the Mac to sleep, inside
-/// that action.
+/// that action. When the user comes back after that sleep (`SessionMonitoring`), the app
+/// blocks sleep again by itself, once no guard applies.
 @MainActor
 @Observable
 public final class AppModel {
@@ -99,6 +100,7 @@ public final class AppModel {
     @ObservationIgnored private let loginItem: any LaunchAtLoginControlling
     @ObservationIgnored private let powerMonitor: any PowerMonitoring
     @ObservationIgnored private let thermalMonitor: any ThermalMonitoring
+    @ObservationIgnored private let sessionMonitor: any SessionMonitoring
     @ObservationIgnored private let claudeSessionReader: any ClaudeSessionReading
     @ObservationIgnored private let lid: any LidReading
     @ObservationIgnored private let systemSleeper: any SystemSleeping
@@ -117,6 +119,10 @@ public final class AppModel {
     @ObservationIgnored private var monitoring: Task<Void, Never>?
     @ObservationIgnored private var powerMonitoring: Task<Void, Never>?
     @ObservationIgnored private var thermalMonitoring: Task<Void, Never>?
+    @ObservationIgnored private var sessionMonitoring: Task<Void, Never>?
+    /// Whether to block sleep again by itself. Its own state, not read from `lastAutomaticRestore`:
+    /// that one goes away when the charger is plugged in, while the block must still come back.
+    @ObservationIgnored private var resumeIntent = ResumeIntent.none
     /// What the Claude guard saw since sleep was blocked. Kept empty while sleep is allowed or the
     /// guard is off, so each block starts unarmed.
     @ObservationIgnored private var claudeTracker = ClaudeGuardTracker()
@@ -148,6 +154,7 @@ public final class AppModel {
         launchAtLogin: any LaunchAtLoginControlling,
         powerMonitor: any PowerMonitoring,
         thermalMonitor: any ThermalMonitoring,
+        sessionMonitor: any SessionMonitoring,
         claudeSessions: any ClaudeSessionReading,
         lid: any LidReading,
         systemSleeper: any SystemSleeping,
@@ -169,6 +176,7 @@ public final class AppModel {
         self.loginItem = launchAtLogin
         self.powerMonitor = powerMonitor
         self.thermalMonitor = thermalMonitor
+        self.sessionMonitor = sessionMonitor
         self.claudeSessionReader = claudeSessions
         self.lid = lid
         self.systemSleeper = systemSleeper
@@ -197,7 +205,7 @@ public final class AppModel {
 
     /// Reads the whole state once, then the sleep state every `refreshInterval`, to see
     /// changes made elsewhere (a terminal, another account). Also follows the battery and the
-    /// thermal state. Does nothing when it already runs.
+    /// thermal state, and the user coming back after a sleep. Does nothing when it already runs.
     public func startMonitoring() {
         guard monitoring == nil else { return }
         // Subscribe, then read: a change between the two reaches the stream.
@@ -215,6 +223,13 @@ public final class AppModel {
             for await state in thermalChanges {
                 guard let model = self else { return }
                 await model.thermalChanged(to: state)
+            }
+        }
+        let sessionEvents = sessionMonitor.events()
+        sessionMonitoring = Task { [weak self] in
+            for await event in sessionEvents {
+                guard let model = self else { return }
+                await model.sessionChanged(event)
             }
         }
         let interval = refreshInterval
@@ -242,6 +257,7 @@ public final class AppModel {
             applyClaude(await sessions)
         }
         await restoreSleepIfAGuardApplies()
+        await blockSleepAgainIfDue()
     }
 
     /// The periodic check: the battery and the thermal state, then the Claude Code sessions (no
@@ -265,6 +281,7 @@ public final class AppModel {
             applyClaude(await sessions)
         }
         await restoreSleepIfAGuardApplies()
+        await blockSleepAgainIfDue()
     }
 
     // MARK: Actions
@@ -280,12 +297,12 @@ public final class AppModel {
             changesSleepOrGuard: true,
             if: { [self] in !(disabled && blockingGuard != nil) }
         ) { [self, sleepController] in
-            try await sleepController.setSleepDisabled(disabled)
+            // The user took over: the app no longer blocks sleep again by itself.
+            resumeIntent = .none
             if disabled {
-                // A new block: what the Claude guard saw during the last one does not count.
-                claudeTracker.reset()
-                armTimer()
+                try await blockSleep()
             } else {
+                try await sleepController.setSleepDisabled(false)
                 // After the write: a refused one leaves the run going.
                 lidRunTracker.cancel()
             }
@@ -326,6 +343,8 @@ public final class AppModel {
     /// Turns sleep back on and removes the sudoers rule.
     public func removeAuthorization() async {
         await perform { [self, authorizer] in
+            // The user took over: installing the rule again must not block sleep by itself.
+            resumeIntent = .none
             try await authorizer.remove()
             // Removing the rule turns sleep back on: the user ended the run.
             lidRunTracker.cancel()
@@ -405,6 +424,7 @@ public final class AppModel {
         monitoring?.cancel()
         powerMonitoring?.cancel()
         thermalMonitoring?.cancel()
+        sessionMonitoring?.cancel()
         restoreTimer.disarm()
         let reset = Task { [self, sleepController] in
             await enqueue {
@@ -460,8 +480,12 @@ public final class AppModel {
 
     private func apply(_ state: SystemState) {
         if let value = state.isSleepDisabled { update(\.isSleepDisabled, to: value) }
-        // Sleep blocked again, by anyone: "sleep allowed again" would contradict the reading.
-        if state.isSleepDisabled == true { update(\.lastAutomaticRestore, to: nil) }
+        // Sleep blocked again, by anyone: "sleep allowed again" would contradict the reading, and
+        // there is nothing left to block again.
+        if state.isSleepDisabled == true {
+            update(\.lastAutomaticRestore, to: nil)
+            resumeIntent = .none
+        }
         if let value = state.authorization { update(\.authorization, to: value) }
         if let value = state.launchAtLogin { update(\.launchAtLogin, to: value) }
         update(\.refreshError, to: state.failure)
@@ -544,6 +568,7 @@ public final class AppModel {
                 failedRestoreKinds.insert(reason.kind)
                 throw error
             }
+            resumeIntent = .afterSleep
             update(\.lastAutomaticRestore, to: reason)
             // Replaced even by nothing: an older report would hide this restore's notice.
             update(\.lastLidClosedReport, to: lidRunTracker.restored(reason, at: timeSource.now))
@@ -554,6 +579,15 @@ public final class AppModel {
             // failure must neither count as a failed restore nor undo `lastAutomaticRestore`.
             if reason.followsWithSystemSleep { try await sleepNow() }
         }
+    }
+
+    /// Writes the block and starts it: the Claude guard starts over and the timer runs for the
+    /// chosen duration. Shared by the user's switch and the block that comes back by itself.
+    private func blockSleep() async throws {
+        try await sleepController.setSleepDisabled(true)
+        // A new block: what the Claude guard saw during the last one does not count.
+        claudeTracker.reset()
+        armTimer()
     }
 
     private func sleepNow() async throws {
@@ -641,6 +675,7 @@ public final class AppModel {
         guard quitting == nil else { return }
         applyPower(power)
         await restoreSleepIfBatteryLow()
+        await blockSleepAgainIfDue()
     }
 
     /// The one way a battery reading enters the model, from an event or from a refresh.
@@ -667,11 +702,54 @@ public final class AppModel {
         guard quitting == nil else { return }
         applyThermal(state)
         await restoreSleepIfTooHot()
+        await blockSleepAgainIfDue()
     }
 
     /// The one way a thermal reading enters the model, from an event or from a refresh.
     private func applyThermal(_ state: ProcessInfo.ThermalState) {
         update(\.isTooHot, to: TemperatureGuard.isTooHot(state))
+    }
+
+    // MARK: Blocking again after a sleep
+
+    private enum ResumeIntent {
+        case none
+        /// An automatic restore succeeded: waiting for the user to come back after the sleep.
+        case afterSleep
+        /// The user is back: waiting for the guards to clear. A new sleep goes back to `afterSleep`.
+        case due
+    }
+
+    /// In the queue, behind a restore in flight: the Mac may sleep and wake before that restore
+    /// sets `afterSleep`.
+    private func sessionChanged(_ event: SessionEvent) async {
+        guard quitting == nil else { return }
+        await serialized { [self] in
+            switch (event, resumeIntent) {
+            case (.resumed, .afterSleep): resumeIntent = .due
+            // Nobody is there until the next resume: no guard clearing in the dark blocks sleep.
+            case (.sleeping, .due): resumeIntent = .afterSleep
+            default: break
+            }
+        }
+        if event == .resumed { await blockSleepAgainIfDue() }
+    }
+
+    /// Called after every resume, reading and power or thermal event, after their guard restores:
+    /// a guard that applies wins first. An action of its own, so it waits its turn in the queue,
+    /// and the busy state follows only once it runs. Tried once: a failure shows its error and the
+    /// intent is gone, as after a success.
+    private func blockSleepAgainIfDue() async {
+        // Skips the queue when nothing waits. The precondition checks again once it has its turn.
+        guard resumeIntent == .due else { return }
+        await perform(.automatic, if: { [self] in
+            resumeIntent == .due && !isSleepDisabled && blockingGuard == nil && authorization != .notAuthorized
+        }) { [self] in
+            resumeIntent = .none
+            try await blockSleep()
+        }
+        // The battery may have dropped, or the Mac heated up, while the write ran.
+        await restoreSleepIfAGuardApplies()
     }
 
     // MARK: Queue
