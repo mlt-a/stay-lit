@@ -13,6 +13,7 @@ Under the hood it toggles `pmset -a disablesleep`. That needs root, so Stay Lit 
 - **Lock on close.** Closing the lid while sleep is blocked locks the session. The Mac keeps running behind the lock screen.
 - **Sleep when Claude is done** (off by default). Once every session is idle and the lid is closed, the Mac goes to sleep: after 1 minute, or 10 minutes if a session waits for your answer.
 - **Timer.** Until turned off, 1 h, 2 h or 4 h.
+- **Back on after sleep.** When Stay Lit allowed sleep by itself (Claude done, timer, battery, heat) and the Mac slept, it turns back on when you unlock the Mac. Low battery or heat: it waits until you plug in or the Mac cools down. Turning the switch off cancels it.
 - **Guards.** Sleep comes back when the battery drops to 20% or when the Mac gets too hot. Both are on by default.
 - **Report.** After a lid-closed run, the window shows how long it lasted and why it stopped.
 - **Launch at login.**
@@ -67,9 +68,10 @@ sudo rm /etc/sudoers.d/staylit-$(id -u)
 ## Things to know
 
 - **Quit** turns sleep back on. A crash or force quit does not: run `sudo /usr/bin/pmset -a disablesleep 0` or relaunch the app.
-- **The timer and the report live in memory.** Quitting forgets them.
+- **The timer duration you pick is kept between launches.** The running timer and the report live in memory: quitting forgets them.
 - **The state follows the system.** The app reads `pmset -g` every 10 seconds, so a change made in a terminal shows up. Lid detection has the same 10-second resolution.
 - **Lock on close** uses `SACLockScreenImmediate`, a private API Apple may remove.
+- **Back on after sleep** detects the unlock through an undocumented notification (`com.apple.screenIsUnlocked`) and an undocumented session key. Apple may change them.
 
 ## Development
 

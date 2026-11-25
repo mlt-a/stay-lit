@@ -22,9 +22,14 @@ private final class SessionsFolder {
         try content.write(to: url.appending(path: name), atomically: true, encoding: .utf8)
     }
 
-    func session(pid: Int32, status: String?) throws {
-        let statusField = status.map { #","status":"\#($0)""# } ?? ""
-        try write("\(pid).json", #"{"pid":\#(pid),"sessionId":"abc","kind":"interactive"\#(statusField)}"#)
+    func session(pid: Int32, status: String?, bridge: String? = nil) throws {
+        let fields = field("status", status) + field("bridgeSessionId", bridge)
+        try write("\(pid).json", #"{"pid":\#(pid),"sessionId":"abc","kind":"interactive"\#(fields)}"#)
+    }
+
+    /// An optional string field of the JSON, with its leading comma. Empty when the value is nil.
+    private func field(_ key: String, _ value: String?) -> String {
+        value.map { #","\#(key)":"\#($0)""# } ?? ""
     }
 
     func reader(alive: Set<Int32>) -> ClaudeSessionDirectoryReader {
@@ -39,6 +44,21 @@ struct ClaudeSessionDirectoryReaderTests {
         try folder.session(pid: 100, status: status)
 
         #expect(await folder.reader(alive: [100]).sessions().activity == .working)
+    }
+
+    @Test func aSessionUnderRemoteControlWorks() async throws {
+        let folder = try SessionsFolder()
+        try folder.session(pid: 100, status: "idle", bridge: "session_01abc")
+
+        #expect(await folder.reader(alive: [100]).sessions() == ClaudeSessionCounts(working: 1))
+    }
+
+    @Test func aNullOrUnexpectedBridgeIsIgnored() async throws {
+        let folder = try SessionsFolder()
+        try folder.write("100.json", #"{"status":"idle","bridgeSessionId":null}"#)
+        try folder.write("101.json", #"{"status":"idle","bridgeSessionId":42}"#)
+
+        #expect(await folder.reader(alive: [100, 101]).sessions() == .none)
     }
 
     @Test func theMostActiveLiveSessionWins() async throws {

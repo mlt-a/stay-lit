@@ -13,4 +13,13 @@ struct ClaudeActivityTests {
     func eachStatusMapsToAnActivity(status: String?, activity: ClaudeActivity) {
         #expect(ClaudeActivity(status: status) == activity)
     }
+
+    @Test(arguments: ["idle", "waiting", "busy", nil] as [String?])
+    func aSessionUnderRemoteControlWorks(status: String?) {
+        #expect(ClaudeActivity(status: status, bridgeSessionId: "session_01abc") == .working)
+    }
+
+    @Test func anEmptyBridgeIsNotRemoteControl() {
+        #expect(ClaudeActivity(status: "idle", bridgeSessionId: "") == .idle)
+    }
 }

@@ -63,6 +63,7 @@ final class DemoMac {
             launchAtLogin: system,
             powerMonitor: power,
             thermalMonitor: DemoThermal(state: state == .tooHot ? .serious : .nominal),
+            sessionMonitor: DemoSessionMonitor(),
             claudeSessions: system,
             lid: system,
             systemSleeper: system,
@@ -74,6 +75,8 @@ final class DemoMac {
             onTemperatureGuardChange: { _ in },
             isClaudeGuardEnabled: state == .litAgents || state == .asleepAgents,
             onClaudeGuardChange: { _ in },
+            blockDuration: .untilTurnedOff,
+            onBlockDurationChange: { _ in },
             timeSource: system
         )
     }
@@ -181,6 +184,11 @@ private struct DemoThermal: ThermalMonitoring {
     let state: ProcessInfo.ThermalState
 
     func changes() -> AsyncStream<ProcessInfo.ThermalState> { AsyncStream { _ in } }
+}
+
+/// The demo Mac never sleeps, so the user never comes back.
+private struct DemoSessionMonitor: SessionMonitoring {
+    func events() -> AsyncStream<SessionEvent> { AsyncStream { _ in } }
 }
 
 /// The status window in one demo state.

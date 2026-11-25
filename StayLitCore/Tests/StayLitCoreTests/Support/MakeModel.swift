@@ -8,6 +8,7 @@ func makeModel(
     launchAtLogin: FakeLaunchAtLogin = FakeLaunchAtLogin(),
     power: FakePowerMonitor = FakePowerMonitor(),
     thermal: FakeThermalMonitor = FakeThermalMonitor(),
+    session: FakeSessionMonitor = FakeSessionMonitor(),
     claudeSessions: FakeClaudeSessionReader = FakeClaudeSessionReader(),
     lid: FakeLidReader = FakeLidReader(),
     systemSleeper: FakeSystemSleeper = FakeSystemSleeper(),
@@ -19,6 +20,8 @@ func makeModel(
     onTemperatureGuardChange: @escaping @MainActor (Bool) -> Void = { _ in },
     claudeGuardEnabled: Bool = true,
     onClaudeGuardChange: @escaping @MainActor (Bool) -> Void = { _ in },
+    blockDuration: BlockDuration = .untilTurnedOff,
+    onBlockDurationChange: @escaping @MainActor (BlockDuration) -> Void = { _ in },
     time: ManualTimeSource = ManualTimeSource()
 ) -> AppModel {
     AppModel(
@@ -27,6 +30,7 @@ func makeModel(
         launchAtLogin: launchAtLogin,
         powerMonitor: power,
         thermalMonitor: thermal,
+        sessionMonitor: session,
         claudeSessions: claudeSessions,
         lid: lid,
         systemSleeper: systemSleeper,
@@ -38,6 +42,8 @@ func makeModel(
         onTemperatureGuardChange: onTemperatureGuardChange,
         isClaudeGuardEnabled: claudeGuardEnabled,
         onClaudeGuardChange: onClaudeGuardChange,
+        blockDuration: blockDuration,
+        onBlockDurationChange: onBlockDurationChange,
         timeSource: time,
         refreshInterval: .seconds(3600)
     )

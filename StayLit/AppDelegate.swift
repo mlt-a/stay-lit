@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let temperatureGuardKey = "temperatureGuardEnabled"
     /// Where the "Claude guard" setting lives between launches. Missing means off: it puts the Mac to sleep.
     private static let claudeGuardKey = "claudeGuardEnabled"
+    /// Where the chosen block duration lives between launches, as its raw value. Missing or unknown means until turned off.
+    private static let blockDurationKey = "blockDuration"
 
     #if DEBUG
     /// Set by `-demo <state>`: the window shows that state, on doubles, and no command runs.
@@ -50,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             launchAtLogin: MainAppLaunchAtLogin(),
             powerMonitor: IOKitPowerMonitor(),
             thermalMonitor: ProcessInfoThermalMonitor(),
+            sessionMonitor: WorkspaceSessionMonitor(),
             claudeSessions: ClaudeSessionDirectoryReader(),
             lid: IOKitLidReader(),
             systemSleeper: PmsetSystemSleeper(),
@@ -70,6 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onClaudeGuardChange: { enabled in
                 UserDefaults.standard.set(enabled, forKey: Self.claudeGuardKey)
                 if enabled { notifier.requestPermission() }
+            },
+            blockDuration: UserDefaults.standard.string(forKey: Self.blockDurationKey)
+                .flatMap(BlockDuration.init(rawValue:)) ?? .untilTurnedOff,
+            onBlockDurationChange: { duration in
+                UserDefaults.standard.set(duration.rawValue, forKey: Self.blockDurationKey)
             }
         )
     }

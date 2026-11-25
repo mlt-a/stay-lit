@@ -1,6 +1,8 @@
 /// How long sleep stays blocked before the app allows it again by itself.
 /// `allCases` is the display order.
-public enum BlockDuration: Sendable, CaseIterable, Hashable {
+///
+/// The raw values are stored in UserDefaults: never rename a case.
+public enum BlockDuration: String, Sendable, CaseIterable, Hashable {
     case untilTurnedOff
     case oneHour
     case twoHours
