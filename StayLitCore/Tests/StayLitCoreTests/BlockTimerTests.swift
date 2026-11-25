@@ -318,6 +318,44 @@ struct BlockTimerTests {
         #expect(time.sleeperCount == 0)
     }
 
+    // MARK: The stored setting
+
+    @Test func theInitialDurationComesFromTheStoredSetting() {
+        let model = makeModel(blockDuration: .twoHours)
+
+        #expect(model.blockDuration == .twoHours)
+    }
+
+    @Test func changingTheDurationHandsItToBeStoredOnlyWhenItChanges() {
+        let saved = SavedDurations()
+        let model = makeModel(blockDuration: .oneHour, onBlockDurationChange: saved.save)
+
+        model.setBlockDuration(.oneHour)
+        #expect(saved.values.isEmpty)
+
+        model.setBlockDuration(.fourHours)
+        model.setBlockDuration(.fourHours)
+        model.setBlockDuration(.untilTurnedOff)
+        #expect(saved.values == [.fourHours, .untilTurnedOff])
+    }
+
+    @Test func aRestoredDurationArmsTheTimerWhenSleepIsBlocked() async {
+        let system = FakeSystem(authorized: true)
+        let time = ManualTimeSource()
+        let model = makeModel(system, blockDuration: .twoHours, time: time)
+        let start = time.now
+
+        await model.setSleepDisabled(true)
+        await time.waitForSleeper()
+
+        #expect(model.restoreDeadline == start.addingTimeInterval(2 * 3600))
+        #expect(time.sleeperCount == 1)
+    }
+
+    @Test func theRawValuesAreStable() {
+        #expect(BlockDuration.allCases.map(\.rawValue) == ["untilTurnedOff", "oneHour", "twoHours", "fourHours"])
+    }
+
     @Test(arguments: [
         (BlockDuration.untilTurnedOff, nil),
         (.oneHour, Duration.seconds(3600)),
@@ -328,4 +366,12 @@ struct BlockTimerTests {
         #expect(duration.interval == interval)
         #expect(BlockDuration.allCases.contains(duration))
     }
+}
+
+/// The durations the model handed over to be stored.
+@MainActor
+private final class SavedDurations {
+    private(set) var values: [BlockDuration] = []
+
+    func save(_ value: BlockDuration) { values.append(value) }
 }

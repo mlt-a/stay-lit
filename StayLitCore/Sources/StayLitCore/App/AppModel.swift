@@ -24,7 +24,7 @@ public final class AppModel {
     public private(set) var authorization: AuthorizationStatus?
     public private(set) var launchAtLogin: LaunchAtLoginStatus
     /// How long the next block lasts, and the one in progress when a deadline is armed.
-    public private(set) var blockDuration = BlockDuration.untilTurnedOff
+    public private(set) var blockDuration: BlockDuration
     /// The "Battery guard" setting.
     public private(set) var isBatteryGuardEnabled: Bool
     /// The Mac has a battery: the guard setting only makes sense then.
@@ -104,6 +104,7 @@ public final class AppModel {
     @ObservationIgnored private let systemSleeper: any SystemSleeping
     @ObservationIgnored private let screenLocker: any ScreenLocking
     @ObservationIgnored private let notifier: any SleepRestoreNotifying
+    @ObservationIgnored private let onBlockDurationChange: @MainActor (BlockDuration) -> Void
     @ObservationIgnored private let onBatteryGuardChange: @MainActor (Bool) -> Void
     @ObservationIgnored private let onTemperatureGuardChange: @MainActor (Bool) -> Void
     @ObservationIgnored private let onClaudeGuardChange: @MainActor (Bool) -> Void
@@ -136,9 +137,10 @@ public final class AppModel {
     @ObservationIgnored private var quitting: Task<Void, Never>?
     private var pendingActions = 0
 
-    /// `isBatteryGuardEnabled`, `isTemperatureGuardEnabled` and `isClaudeGuardEnabled` are the
-    /// stored settings; `onBatteryGuardChange`, `onTemperatureGuardChange` and
-    /// `onClaudeGuardChange` store the user's new choice. The model keeps no storage of its own.
+    /// `blockDuration`, `isBatteryGuardEnabled`, `isTemperatureGuardEnabled` and
+    /// `isClaudeGuardEnabled` are the stored settings; `onBlockDurationChange`,
+    /// `onBatteryGuardChange`, `onTemperatureGuardChange` and `onClaudeGuardChange` store the
+    /// user's new choice. The model keeps no storage of its own.
     /// `timeSource` is also the clock of the Claude guard.
     public init(
         sleepController: any SleepControlling,
@@ -157,6 +159,8 @@ public final class AppModel {
         onTemperatureGuardChange: @escaping @MainActor (Bool) -> Void,
         isClaudeGuardEnabled: Bool,
         onClaudeGuardChange: @escaping @MainActor (Bool) -> Void,
+        blockDuration: BlockDuration,
+        onBlockDurationChange: @escaping @MainActor (BlockDuration) -> Void,
         timeSource: any TimeSource = SystemTimeSource(),
         refreshInterval: Duration = .seconds(10)
     ) {
@@ -170,6 +174,7 @@ public final class AppModel {
         self.systemSleeper = systemSleeper
         self.screenLocker = screenLocker
         self.notifier = notifier
+        self.onBlockDurationChange = onBlockDurationChange
         self.onBatteryGuardChange = onBatteryGuardChange
         self.onTemperatureGuardChange = onTemperatureGuardChange
         self.onClaudeGuardChange = onClaudeGuardChange
@@ -177,6 +182,7 @@ public final class AppModel {
         self.restoreTimer = RestoreTimer(timeSource: timeSource)
         self.refreshInterval = refreshInterval
         self.launchAtLogin = launchAtLogin.status
+        self.blockDuration = blockDuration
         self.isBatteryGuardEnabled = isBatteryGuardEnabled
         let power = powerMonitor.state
         self.power = power
@@ -300,6 +306,7 @@ public final class AppModel {
         guard duration != blockDuration else { return }
         allowAutomaticRestoresAgain()
         update(\.blockDuration, to: duration)
+        onBlockDurationChange(duration)
         if isSleepDisabled { armTimer() }
     }
 

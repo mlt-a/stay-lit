@@ -19,6 +19,8 @@ func makeModel(
     onTemperatureGuardChange: @escaping @MainActor (Bool) -> Void = { _ in },
     claudeGuardEnabled: Bool = true,
     onClaudeGuardChange: @escaping @MainActor (Bool) -> Void = { _ in },
+    blockDuration: BlockDuration = .untilTurnedOff,
+    onBlockDurationChange: @escaping @MainActor (BlockDuration) -> Void = { _ in },
     time: ManualTimeSource = ManualTimeSource()
 ) -> AppModel {
     AppModel(
@@ -38,6 +40,8 @@ func makeModel(
         onTemperatureGuardChange: onTemperatureGuardChange,
         isClaudeGuardEnabled: claudeGuardEnabled,
         onClaudeGuardChange: onClaudeGuardChange,
+        blockDuration: blockDuration,
+        onBlockDurationChange: onBlockDurationChange,
         timeSource: time,
         refreshInterval: .seconds(3600)
     )

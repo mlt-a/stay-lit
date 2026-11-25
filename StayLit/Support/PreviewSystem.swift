@@ -74,6 +74,8 @@ final class DemoMac {
             onTemperatureGuardChange: { _ in },
             isClaudeGuardEnabled: state == .litAgents || state == .asleepAgents,
             onClaudeGuardChange: { _ in },
+            blockDuration: .untilTurnedOff,
+            onBlockDurationChange: { _ in },
             timeSource: system
         )
     }
